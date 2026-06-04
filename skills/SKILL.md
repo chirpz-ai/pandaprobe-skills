@@ -27,10 +27,10 @@ which instrumentation always depends on (work doc-first, never from memory).
 ## Set up PandaProbe (guided onboarding)
 
 When the user says "set up PandaProbe", "add PandaProbe to my project", "get started", or
-similar, run the end-to-end onboarding: detect the stack → install and authenticate the CLI
-→ install and configure the SDK → instrument the app (highest layer that fits, doc-first) →
-run it and verify a trace lands → point them to the dashboard. **Confirm with the user
-before installing packages, authenticating, or editing their code.**
+similar, run the end-to-end onboarding: detect the stack → install and configure the SDK →
+instrument the app (highest layer that fits, doc-first) → run it to produce a trace →
+install the CLI and verify the trace landed → point them to the dashboard. **Confirm with
+the user before installing packages, authenticating, or editing their code.**
 
 Follow the step-by-step playbook in [references/setup.md](references/setup.md); it sequences
 section 1 (instrument) and section 2 (CLI) and uses the docs from section 3.

@@ -1,13 +1,14 @@
 ---
 name: pandaprobe-setup
-description: Guided end-to-end onboarding for PandaProbe — take a project from zero to a verified trace. Use when the user asks to "set up PandaProbe", "add PandaProbe to my project", "get started with PandaProbe", or "onboard PandaProbe". Sequences CLI install/auth, SDK install/config, app instrumentation, and trace verification.
+description: Guided end-to-end onboarding for PandaProbe — take a project from zero to a verified trace. Use when the user asks to "set up PandaProbe", "add PandaProbe to my project", "get started with PandaProbe", or "onboard PandaProbe". Sequences SDK install/config and app instrumentation first, then CLI install/auth and trace verification.
 ---
 
 # Set up PandaProbe (guided onboarding)
 
 Goal: get the user from zero to a **verified trace from their own app**, then point them to
-the dashboard. This is an orchestrator — it sequences the CLI ([cli.md](cli.md)) and
-instrumentation ([instrumentation.md](instrumentation.md)) references and the live docs.
+the dashboard. This is an orchestrator — it sequences the instrumentation
+([instrumentation.md](instrumentation.md)) and CLI ([cli.md](cli.md)) references and the
+live docs: instrument and trace the app first, then bring in the CLI to read the data back.
 
 **Ground rules**
 
@@ -22,7 +23,7 @@ instrumentation ([instrumentation.md](instrumentation.md)) references and the li
 
 Inspect the project and summarize what you find, then propose the plan and ask to proceed.
 
-- **Language / runtime** — is this a Python app? (PandaProbe's SDK is Python.)
+- **Language / runtime** — is this a Python app? (PandaProbe's SDK is Python - we do not have TS SDK at this point.)
 - **Stack** — which agent framework or LLM provider is in use? Check dependency files
   (`pyproject.toml`, `requirements.txt`, `uv.lock`) and imports for: LangGraph, LangChain,
   OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents; or OpenAI, Anthropic,
@@ -34,27 +35,7 @@ Inspect the project and summarize what you find, then propose the plan and ask t
 State the detected stack and the proposed layer (integration → wrapper → manual, highest
 that fits), then confirm before continuing.
 
-## Step 1 — Install & authenticate the CLI
-
-The CLI gives the user a dashboard account, credentials, and the means to verify traces.
-Install and verify (details: [cli.md](cli.md)):
-
-```bash
-curl -fsSL https://cli.pandaprobe.com/install.sh | sh   # Windows: irm https://cli.pandaprobe.com/install.ps1 | iex
-pandaprobe version
-```
-
-Authenticate (confirm first; this opens a browser):
-
-```bash
-pandaprobe auth login        # add --no-browser on headless/SSH
-pandaprobe auth status       # confirm (key masked)
-```
-
-For self-hosted, skip `auth login` and set `endpoint` + `api_key` via `pandaprobe config set`
-instead.
-
-## Step 2 — Install the SDK
+## Step 1 — Install the SDK
 
 Install the SDK with the extra for the detected stack (confirm before running). See the
 extras table in [instrumentation.md](instrumentation.md):
@@ -63,38 +44,56 @@ extras table in [instrumentation.md](instrumentation.md):
 pip install "pandaprobe[<extra>]"    # e.g. pandaprobe[langgraph] or pandaprobe[openai]
 ```
 
-## Step 3 — Configure SDK credentials
+## Step 2 — Configure SDK credentials
 
-The SDK reads credentials from environment variables (not the CLI's config file). Ask the
-user to set these in their shell or `.env` — **do not paste the key yourself**:
+The SDK reads credentials from environment variables. Ask the user to set these in their
+shell or `.env` — **do not paste the key yourself** (they copy it from the PandaProbe
+dashboard at https://app.pandaprobe.com):
 
 ```bash
 export PANDAPROBE_API_KEY="<from the PandaProbe dashboard>"
 export PANDAPROBE_PROJECT_NAME="my-project"
 ```
 
-Confirm they're set (e.g. the app can read them) before instrumenting.
+Confirm they're set (the app can read them) before instrumenting.
 
-## Step 4 — Instrument the app
+## Step 3 — Instrument the app
 
-Follow [instrumentation.md](instrumentation.md) for the chosen layer, and **fetch the exact
-framework/provider page** (SKILL.md section 3) to confirm import paths, class names, and wiring
-before editing code. Apply the minimal change at the entry point, and confirm the diff with
-the user before writing it.
+This is the core step. Follow [instrumentation.md](instrumentation.md) for the chosen layer,
+and **fetch the exact framework/provider page** (SKILL.md section 3) to confirm import paths,
+class names, and wiring **before** editing code. Apply the minimal change at the entry
+point — attach the integration handler/adapter, or wrap the provider client — and confirm
+the diff with the user before writing it.
 
-## Step 5 — Run & verify
+## Step 4 — Run the app to produce a trace
 
-Run the app to produce a trace, then confirm it landed (details: [cli.md](cli.md)):
+Run the instrumented app so it emits a trace. Enable debug logging to confirm the SDK is
+sending data:
 
 ```bash
 PANDAPROBE_DEBUG=true python your_app.py   # debug logs show traces being sent
-pandaprobe traces list --limit 5
-pandaprobe traces get <trace_id>           # inspect spans, token usage, status
 ```
 
-If nothing appears: check `PANDAPROBE_API_KEY` / `PANDAPROBE_PROJECT_NAME` are set,
+If nothing is sent: check `PANDAPROBE_API_KEY` / `PANDAPROBE_PROJECT_NAME` are set,
 `PANDAPROBE_ENABLED` is not `false`, and the endpoint is reachable
 (https://docs.pandaprobe.com/tracing/configuration/troubleshooting).
+
+## Step 5 — Install the CLI & verify the trace
+
+Now install the CLI to read the data back and confirm the trace landed (details:
+[cli.md](cli.md)):
+
+```bash
+curl -fsSL https://cli.pandaprobe.com/install.sh | sh   # Windows: irm https://cli.pandaprobe.com/install.ps1 | iex
+pandaprobe version
+pandaprobe auth login            # Cloud login (add --no-browser on headless/SSH)
+pandaprobe traces list --limit 5
+pandaprobe traces get <trace_id> # inspect spans, token usage, status
+```
+
+For self-hosted, skip `auth login` and set `endpoint` + `api_key` via `pandaprobe config set`.
+The CLI is also the tool for ongoing work — reading traces/sessions/scores and running
+evaluations (see [cli.md](cli.md)).
 
 ## Step 6 — Done
 
