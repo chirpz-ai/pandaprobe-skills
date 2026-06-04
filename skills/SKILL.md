@@ -1,6 +1,6 @@
 ---
 name: pandaprobe
-description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) set up, onboard, or get started with PandaProbe in a project ("set up PandaProbe", "add PandaProbe", "get started with PandaProbe") — a guided flow that installs and authenticates the SDK and CLI, instruments the app, and verifies traces; (2) add tracing or observability to an AI agent or LLM app by instrumenting an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents) or LLM provider (OpenAI, Anthropic, Gemini, Mistral, Bedrock) with the PandaProbe SDK; or (3) install, authenticate, and use the pandaprobe CLI to inspect, debug, or evaluate traces, sessions, spans, scores, and evaluation runs. Instrumentation is done doc-first against the live PandaProbe documentation.
+description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) set up, onboard, or get started with PandaProbe in a project ("set up PandaProbe", "add PandaProbe", "get started with PandaProbe") — a guided, interactive flow that builds and runs a first traced example from scratch and verifies the traces; (2) add tracing or observability to an AI agent or LLM app by instrumenting an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents) or LLM provider (OpenAI, Anthropic, Gemini, Mistral, Bedrock) with the PandaProbe SDK; or (3) install, authenticate, and use the pandaprobe CLI to inspect, debug, or evaluate traces, sessions, spans, scores, and evaluation runs. Instrumentation is done doc-first against the live PandaProbe documentation.
 allowed-tools:
   - Bash(pandaprobe *)
   - Bash(curl -fsSL https://cli.pandaprobe.com/*)
@@ -15,7 +15,8 @@ allowed-tools:
 PandaProbe is an agent engineering platform for tracing, evaluating, and monitoring AI
 agents and LLM apps. This skill supports three goals:
 
-1. **Onboard a project** onto PandaProbe — a guided end-to-end setup (see the next section).
+1. **Onboard a project** onto PandaProbe — a guided, interactive setup that builds and runs
+   a first traced example from scratch, ideal for an empty or new project (see the next section).
 2. **Instrument an application** with the PandaProbe SDK so its runs are traced (section 1);
    see [references/instrumentation.md](references/instrumentation.md).
 3. **Read and evaluate data** — traces, sessions, spans, scores, eval runs — with the
@@ -26,14 +27,16 @@ which instrumentation always depends on (work doc-first, never from memory).
 
 ## Set up PandaProbe (guided onboarding)
 
-When the user says "set up PandaProbe", "add PandaProbe to my project", "get started", or
-similar, run the end-to-end onboarding: detect the stack → install and configure the SDK →
-instrument the app (highest layer that fits, doc-first) → run it to produce a trace →
-install the CLI and verify the trace landed → point them to the dashboard. **Confirm with
-the user before installing packages, authenticating, or editing their code.**
+When the user says "set up PandaProbe", "add PandaProbe", "get started", or similar —
+especially in an empty or new project — run the guided onboarding: **build and run a small
+working example** so they see their first traces. Ask which provider and what to build (a
+simple traced LLM call, or a small framework agent), implement it doc-first, run it, then
+install the CLI to verify the trace and point them to the dashboard. If they instead want to
+trace an app they already have, use section 1 (instrument). **Confirm before installing
+packages, creating files, or authenticating.**
 
-Follow the step-by-step playbook in [references/setup.md](references/setup.md); it sequences
-section 1 (instrument) and section 2 (CLI) and uses the docs from section 3.
+Follow the step-by-step playbook in [references/setup.md](references/setup.md); it uses the
+docs from section 3 and the references in sections 1 (instrument) and 2 (CLI).
 
 ## Core Principles
 

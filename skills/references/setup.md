@@ -1,86 +1,104 @@
 ---
 name: pandaprobe-setup
-description: Guided end-to-end onboarding for PandaProbe — take a project from zero to a verified trace. Use when the user asks to "set up PandaProbe", "add PandaProbe to my project", "get started with PandaProbe", or "onboard PandaProbe". Sequences SDK install/config and app instrumentation first, then CLI install/auth and trace verification.
+description: Guided, interactive onboarding for PandaProbe — build and run a small working example from scratch so a new user sees their first traces fast. Use when the user asks to "set up PandaProbe", "add PandaProbe", "get started with PandaProbe", or "onboard", especially with an empty or new project. Asks which provider and what to build, implements the example doc-first, runs it, then verifies traces with the CLI.
 ---
 
 # Set up PandaProbe (guided onboarding)
 
-Goal: get the user from zero to a **verified trace from their own app**, then point them to
-the dashboard. This is an orchestrator — it sequences the instrumentation
-([instrumentation.md](instrumentation.md)) and CLI ([cli.md](cli.md)) references and the
-live docs: instrument and trace the app first, then bring in the CLI to read the data back.
+Goal: get a new user — often with an **empty or unfamiliar project** — from zero to their
+**first traces** by building and running a small, working PandaProbe example *for* them,
+then pointing them to next steps. This is the ground-up path; it favors a runnable example
+over theory.
+
+This is an orchestrator: it makes the choices interactive, implements the example **doc-first**
+(from [instrumentation.md](instrumentation.md) + the live docs), and verifies with the CLI
+([cli.md](cli.md)).
 
 **Ground rules**
 
-- **Confirm before side effects.** Detect first and propose a short plan. Get explicit
-  confirmation before installing packages, authenticating, or editing the user's code.
-- **Doc-first instrumentation.** Don't write tracing code from memory — fetch the latest
-  docs for the user's exact framework/provider (see SKILL.md section 3).
-- **Never echo the API key.** Have the user set credentials themselves; don't print, log,
-  or paste keys.
+- **Be interactive.** Ask the user the questions in Step 1 and wait for answers — don't
+  assume. Keep it friendly and concrete.
+- **Confirm before side effects.** Get explicit confirmation before installing packages,
+  creating files, or authenticating.
+- **Doc-first — never from memory.** Fetch the latest docs for the chosen provider/framework
+  and implement the example from them (exact imports, wrapper/handler wiring). The SDK
+  changes often.
+- **Never echo the API key.** Have the user set credentials themselves; don't print or paste keys.
 
-## Step 0 — Detect & plan
+## Step 0 — Orient & branch
 
-Inspect the project and summarize what you find, then propose the plan and ask to proceed.
+Figure out which path the user needs:
 
-- **Language / runtime** — is this a Python app? (PandaProbe's SDK is Python - we do not have TS SDK at this point.)
-- **Stack** — which agent framework or LLM provider is in use? Check dependency files
-  (`pyproject.toml`, `requirements.txt`, `uv.lock`) and imports for: LangGraph, LangChain,
-  OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents; or OpenAI, Anthropic,
-  Gemini, Mistral, Bedrock.
-- **Entry point** — where the agent/LLM run starts (the function to wrap or the
-  graph/runner to attach to).
-- **Already set up?** — is `pandaprobe` already installed, or `PANDAPROBE_*` env vars set?
+- **They already have an app and want to trace it** → this is the instrument flow, not
+  onboarding. Use [instrumentation.md](instrumentation.md) (SKILL.md section 1) instead.
+- **Empty/new project, exploring, or wants a guided example** → continue here.
 
-State the detected stack and the proposed layer (integration → wrapper → manual, highest
-that fits), then confirm before continuing.
+Confirm Python 3.10+ is available (PandaProbe's SDK is Python; there is no TS SDK yet), and
+pick/confirm a working directory (create one and a virtualenv if helpful).
 
-## Step 1 — Install the SDK
+## Step 1 — Ask what to build (interactive)
 
-Install the SDK with the extra for the detected stack (confirm before running). See the
-extras table in [instrumentation.md](instrumentation.md):
+Ask the user two questions and wait for answers:
+
+1. **Which model provider** do they want to use — OpenAI, Anthropic, Gemini, Mistral, or
+   Bedrock? (They'll need that provider's API key.)
+2. **What should the first example be?**
+   - **A) Simple LLM call** — one traced call via a provider wrapper (e.g. `wrap_openai`).
+     Best for a first look: minimal code, a single trace.
+   - **B) Agent with a framework** — a small agent with one tool, traced via a framework
+     integration, so they see a multi-span trace (LLM + tool + agent). For this, ask which
+     framework they'd like; recommend one that pairs well with their provider (e.g.
+     LangGraph or OpenAI Agents) and confirm.
+
+Offer to build just one now and the other later. Summarize the plan (provider + example +
+packages you'll install) and confirm before proceeding.
+
+## Step 2 — Credentials & install
+
+Confirm before installing.
+
+- **PandaProbe:** have the user set these (key copied from the dashboard at
+  https://app.pandaprobe.com — **don't paste it yourself**):
+  ```bash
+  export PANDAPROBE_API_KEY="<from the PandaProbe dashboard>"
+  export PANDAPROBE_PROJECT_NAME="my-first-project"
+  ```
+- **Provider:** ensure the chosen provider's key is set (e.g. `OPENAI_API_KEY`).
+- **Install** the SDK with the extra for the example, plus any provider/framework library
+  the example imports (see the extras table in [instrumentation.md](instrumentation.md)):
+  ```bash
+  pip install "pandaprobe[<extra>]"    # e.g. pandaprobe[openai] (Simple) or pandaprobe[langgraph] (Agent)
+  ```
+
+## Step 3 — Fetch docs & implement the example (doc-first)
+
+Fetch the latest relevant docs (SKILL.md section 3), then write a minimal, runnable example
+file from them — **not from memory**. Confirm the file with the user before creating it.
+
+- **Simple LLM call** → `tracing/wrappers/overview` + the chosen provider's wrapper page;
+  wrap the client and make one call.
+- **Agent with a framework** → `tracing/integrations/overview` + the chosen framework's
+  page (and `get-started/quickstart`); wire the integration (callback handler or adapter
+  `.instrument()`) around a small agent with one tool.
+
+Use [instrumentation.md](instrumentation.md) for the layer overview, but follow the docs for
+exact names and wiring.
+
+## Step 4 — Run the example
+
+Run it so it emits a trace; debug logging confirms the SDK is sending data:
 
 ```bash
-pip install "pandaprobe[<extra>]"    # e.g. pandaprobe[langgraph] or pandaprobe[openai]
+PANDAPROBE_DEBUG=true python example.py
 ```
 
-## Step 2 — Configure SDK credentials
-
-The SDK reads credentials from environment variables. Ask the user to set these in their
-shell or `.env` — **do not paste the key yourself** (they copy it from the PandaProbe
-dashboard at https://app.pandaprobe.com):
-
-```bash
-export PANDAPROBE_API_KEY="<from the PandaProbe dashboard>"
-export PANDAPROBE_PROJECT_NAME="my-project"
-```
-
-Confirm they're set (the app can read them) before instrumenting.
-
-## Step 3 — Instrument the app
-
-This is the core step. Follow [instrumentation.md](instrumentation.md) for the chosen layer,
-and **fetch the exact framework/provider page** (SKILL.md section 3) to confirm import paths,
-class names, and wiring **before** editing code. Apply the minimal change at the entry
-point — attach the integration handler/adapter, or wrap the provider client — and confirm
-the diff with the user before writing it.
-
-## Step 4 — Run the app to produce a trace
-
-Run the instrumented app so it emits a trace. Enable debug logging to confirm the SDK is
-sending data:
-
-```bash
-PANDAPROBE_DEBUG=true python your_app.py   # debug logs show traces being sent
-```
-
-If nothing is sent: check `PANDAPROBE_API_KEY` / `PANDAPROBE_PROJECT_NAME` are set,
-`PANDAPROBE_ENABLED` is not `false`, and the endpoint is reachable
+If nothing is sent: check `PANDAPROBE_API_KEY` / `PANDAPROBE_PROJECT_NAME` (and the provider
+key) are set, `PANDAPROBE_ENABLED` is not `false`, and the endpoint is reachable
 (https://docs.pandaprobe.com/tracing/configuration/troubleshooting).
 
 ## Step 5 — Install the CLI & verify the trace
 
-Now install the CLI to read the data back and confirm the trace landed (details:
+Install the CLI to read the data back and confirm the trace landed (details:
 [cli.md](cli.md)):
 
 ```bash
@@ -91,12 +109,13 @@ pandaprobe traces list --limit 5
 pandaprobe traces get <trace_id> # inspect spans, token usage, status
 ```
 
-For self-hosted, skip `auth login` and set `endpoint` + `api_key` via `pandaprobe config set`.
-The CLI is also the tool for ongoing work — reading traces/sessions/scores and running
-evaluations (see [cli.md](cli.md)).
+Then point the user to the dashboard at **https://app.pandaprobe.com** to see the trace
+visually.
 
-## Step 6 — Done
+## Step 6 — Next steps
 
-Confirm success and point the user to the dashboard at **https://app.pandaprobe.com** to
-view their traces. Suggest next steps: grouping runs into sessions, and running evaluations
-over captured traces (see [cli.md](cli.md) → Evaluations).
+Offer where to go from here:
+
+- **Build the other example** (the one not chosen in Step 1).
+- **Instrument their real app** — switch to [instrumentation.md](instrumentation.md).
+- **Read data & run evaluations** over captured traces — see [cli.md](cli.md).
