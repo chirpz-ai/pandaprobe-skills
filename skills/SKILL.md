@@ -1,6 +1,6 @@
 ---
 name: pandaprobe
-description: Interact with PandaProbe and access its documentation. Use when needing to (1) look up PandaProbe documentation, concepts, and integration guides for SDK usage, (2) instrument and trace an AI agent or LLM app, (3) inspect traces, sessions, spans, scores, or evaluation runs via the pandaprobe CLI, or (4) install, set up, and authenticate the pandaprobe CLI. Covers SDK instrumentation, CLI-based read/eval access, and documentation retrieval.
+description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) instrument and trace an AI agent or LLM app — adding observability to an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents) or an LLM provider (OpenAI, Anthropic, Gemini, Mistral, Bedrock); (2) inspect, debug, or evaluate traces, sessions, spans, scores, or evaluation runs via the pandaprobe CLI; (3) install, set up, or authenticate the pandaprobe CLI; or (4) look up PandaProbe documentation, concepts, or integration guides for SDK usage. Covers SDK instrumentation, CLI-based read/eval access, and documentation retrieval.
 allowed-tools:
   - Bash(pandaprobe *)
   - Bash(curl -fsSL https://cli.pandaprobe.com/*)
@@ -61,37 +61,15 @@ The high-level playbook — layers, install extras, the integration wiring patte
 
 ## 2. Read & evaluate data (CLI)
 
-Use the `pandaprobe` CLI from the terminal. Install (macOS/Linux) and verify:
+Use the `pandaprobe` CLI to inspect traces, sessions, spans, scores, and evaluation runs.
+Reads (`list`/`get`/`spans`/`metrics`) are safe to run freely; the three eval **write**
+commands — `evals runs create`, `evals runs batch`, `evals scores submit` — create data, so
+run them only when the user explicitly asks.
 
-```bash
-curl -fsSL https://cli.pandaprobe.com/install.sh | sh   # Windows: irm https://cli.pandaprobe.com/install.ps1 | iex
-pandaprobe version
-```
-
-Discover commands and flags before running them:
-
-```bash
-pandaprobe --help              # top-level command groups
-pandaprobe traces --help       # actions in a group
-pandaprobe traces list --help  # flags for one action
-```
-
-**Authenticate:**
-
-- **Cloud (recommended):** `pandaprobe auth login` opens the browser (add `--no-browser`
-  for headless/SSH), mints a 90-day key, and writes `~/.pandaprobe/config.yaml`.
-- **Self-hosted / manual:** `pandaprobe config set endpoint|project_name|api_key <value>`,
-  or `PANDAPROBE_*` env vars. If credentials are missing, ask the user to run `auth login`
-  or set them in their shell; never ask them to paste a key into chat.
-
-**Read vs. write:** `list`/`get`/`spans`/`metrics` are read-only. `evals runs create`,
-`evals runs batch`, and `evals scores submit` **create data** — run them only when the user
-explicitly asks. Parse JSON output with `jq` and branch on exit codes (`0` ok ·
-`1` general/network · `2` auth · `3` not found · `4` validation · `5` other API error).
-
-The full command tree, flags, output contract, exit codes, and `jq` recipes are in
-[references/cli.md](references/cli.md). For anything not covered there, run
-`pandaprobe <command> --help` or see the docs: https://docs.pandaprobe.com/tools/cli.
+Install, authentication (Cloud and self-hosted), the full command tree, output contract,
+exit codes, and `jq` recipes are in [references/cli.md](references/cli.md) — read it before
+running commands. For anything beyond it, run `pandaprobe <command> --help` or see
+https://docs.pandaprobe.com/tools/cli.
 
 ## 3. Access PandaProbe documentation
 
