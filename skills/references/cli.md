@@ -1,3 +1,8 @@
+---
+name: pandaprobe-cli
+description: Install, authenticate, configure, and operate the pandaprobe CLI to read and evaluate data. Use when inspecting traces, sessions, spans, scores, or evaluation runs from the terminal, parsing JSON output with jq and branching on exit codes, or creating eval runs and submitting scores.
+---
+
 # PandaProbe CLI Reference
 
 Operate the `pandaprobe` CLI to read traces, sessions, spans, scores, and evaluation runs.
@@ -149,8 +154,8 @@ pandaprobe sessions get <session_id> --include-traces
 
 ### Evaluations
 
-Target traces or sessions with `--target trace|session` (default `trace`). Reads are safe;
-the three write commands are flagged below.
+Target traces or sessions with `--target trace|session` (default `trace`). There are multiple read commands
+along with three write commands that are flagged below.
 
 **Read:**
 
@@ -173,7 +178,7 @@ pandaprobe evals scores get <trace_id> --target trace
   `--date-from`, `--date-to`; session uses `--session-id`; `--limit`, `--offset`.
 - `evals scores get <trace_id|session_id>` — `--target`.
 
-**Write — run only when the user explicitly asks:**
+**Write — run only when the user explicitly asks or you need to evaluate an agent:**
 
 ```bash
 # Run metrics over traces matching filters
