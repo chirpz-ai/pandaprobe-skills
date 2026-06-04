@@ -1,7 +1,6 @@
 ---
 name: pandaprobe
-description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) instrument and trace an AI agent or LLM app, (2) inspect traces, sessions, spans, scores, or evaluation runs via the pandaprobe CLI, or (3) install or authenticate the pandaprobe CLI. Covers SDK instrumentation and CLI-based read/eval access.
-license: MIT
+description: Trace and evaluate AI agents with PandaProbe. Use when needing to (1) instrument and trace an AI agent or LLM app, (2) inspect traces, sessions, spans, scores, or evaluation runs via the pandaprobe CLI, or (3) install, setup and authenticate the pandaprobe CLI. Covers SDK instrumentation and CLI-based read/write access.
 allowed-tools:
   - Bash(pandaprobe *)
   - Bash(curl -fsSL https://cli.pandaprobe.com/*)
@@ -12,10 +11,12 @@ allowed-tools:
 
 PandaProbe is an agent engineering platform for tracing, evaluating, and monitoring AI
 agents and LLM apps. This skill helps you drive its **agent-first CLI** (read traces,
-sessions, spans, scores, and evaluation runs) and add its **Python SDK instrumentation**
+sessions, spans, scores, and evaluation runs) and add its **SDK instrumentation**
 to a developer's application.
 
 ## Core principles
+
+Follow these principles for ALL PandaProbe work:
 
 1. **CLI for data access.** To read or evaluate PandaProbe data, use the `pandaprobe`
    CLI — never hand-build API calls. It is agent-first: JSON on stdout, errors on stderr,
