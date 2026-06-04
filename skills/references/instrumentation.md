@@ -1,22 +1,41 @@
+---
+name: pandaprobe-instrumentation
+description: Add PandaProbe tracing to an AI agent or LLM application. Use when instrumenting an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents), wrapping an LLM provider client, adding manual trace/span instrumentation, or verifying that traces are captured.
+---
+
 # PandaProbe SDK Instrumentation
 
-Add PandaProbe tracing to a developer's Python application. PandaProbe captures execution
-as **traces** (one logical run) composed of **spans** (steps within a run).
+Add PandaProbe tracing to a developer's AI agent or LLM application. PandaProbe captures
+execution as **traces** (one logical run) composed of **spans** (steps within a run).
+
+Instrumentation has three layers, in priority order:
+
+1. **Agent framework integrations** — the primary path. If the app runs on a supported
+   framework, this gives end-to-end traces (LLM + tools + sub-agents) with almost no code.
+2. **LLM provider wrappers** — when there's no agent framework, or you only need LLM-call
+   visibility.
+3. **Manual instrumentation** — decorators/context managers for custom runtimes or extra
+   spans around your own logic.
+
+Prefer the highest layer that fits; they compose (a wrapper call inside an integration or
+`@pandaprobe.trace` nests automatically as a child span).
 
 ## Fetch current docs first
 
-**The SDK evolves — never instrument from memory.** Before writing any code, fetch the
-latest official docs and adopt the latest SDK version. Treat every snippet below as a
-starting point and **verify it against the current docs**:
+**The SDK evolves — never instrument from memory.** Before writing code, fetch the latest
+docs and adopt the latest SDK version. Treat every snippet below as a starting point and
+**verify it against the current docs** — especially exact import paths and class names,
+which are framework-specific.
 
 - Index (discover all pages): https://docs.pandaprobe.com/llms.txt
-- Overview: https://docs.pandaprobe.com/tracing/overview
-- Concepts (data model): https://docs.pandaprobe.com/tracing/concepts
-- Wrappers (LLM providers): https://docs.pandaprobe.com/tracing/wrappers/overview
+- Overview & concepts: https://docs.pandaprobe.com/tracing/overview · https://docs.pandaprobe.com/tracing/concepts
 - Integrations (agent frameworks): https://docs.pandaprobe.com/tracing/integrations/overview
-- Manual decorators: https://docs.pandaprobe.com/tracing/manual/decorators
+- Wrappers (LLM providers): https://docs.pandaprobe.com/tracing/wrappers/overview
+- Manual decorators / context managers: https://docs.pandaprobe.com/tracing/manual/decorators
+- Env vars: https://docs.pandaprobe.com/tracing/configuration/environment-variables
 
-Append `.md` to any docs URL to fetch clean markdown (e.g. `…/tracing/overview.md`).
+Append `.md` to any docs URL for clean markdown (e.g. `…/tracing/integrations/langgraph.md`).
+**Always open the specific framework's integration page before wiring it up.**
 
 ## Install
 
@@ -24,22 +43,23 @@ Append `.md` to any docs URL to fetch clean markdown (e.g. `…/tracing/overview
 pip install pandaprobe        # Python 3.10+ (or: uv add pandaprobe)
 ```
 
-Install only the extras for the providers/frameworks in use:
+Install only the extras for the providers/frameworks in use (combine with commas, e.g.
+`pip install "pandaprobe[langgraph,openai]"`):
 
-| Extra                                  | Covers                            |
-| -------------------------------------- | --------------------------------- |
-| `pandaprobe[openai]`                   | OpenAI wrapper                    |
-| `pandaprobe[anthropic]`                | Anthropic wrapper                 |
-| `pandaprobe[gemini]`                   | Google Gemini wrapper            |
-| `pandaprobe[mistral]`                  | Mistral wrapper                  |
-| `pandaprobe[bedrock]` *(beta)*         | AWS Bedrock wrapper              |
-| `pandaprobe[langgraph]` / `[langchain]` / `[deepagents]` | LangChain-family integrations |
-| `pandaprobe[google-adk]`               | Google ADK integration            |
-| `pandaprobe[claude-agent-sdk]`         | Claude Agent SDK integration      |
-| `pandaprobe[crewai]`                   | CrewAI integration                |
-| `pandaprobe[openai-agents]`            | OpenAI Agents SDK integration     |
-
-Combine extras: `pip install "pandaprobe[openai,anthropic,langgraph]"`.
+| Extra                          | Covers                                    |
+| ------------------------------ | ----------------------------------------- |
+| `pandaprobe[langgraph]`        | LangGraph integration                     |
+| `pandaprobe[langchain]`        | LangChain integration                     |
+| `pandaprobe[deepagents]`       | DeepAgents integration                    |
+| `pandaprobe[openai-agents]`    | OpenAI Agents SDK integration             |
+| `pandaprobe[crewai]`           | CrewAI integration                        |
+| `pandaprobe[google-adk]`       | Google ADK integration                    |
+| `pandaprobe[claude-agent-sdk]` | Claude Agent SDK integration              |
+| `pandaprobe[openai]`           | OpenAI wrapper                            |
+| `pandaprobe[anthropic]`        | Anthropic wrapper                        |
+| `pandaprobe[gemini]`           | Google Gemini wrapper                    |
+| `pandaprobe[mistral]`          | Mistral wrapper                          |
+| `pandaprobe[bedrock]`          | AWS Bedrock wrapper (beta)               |
 
 ## Credentials
 
@@ -54,16 +74,68 @@ export PANDAPROBE_ENVIRONMENT="production"                # tag traces
 export PANDAPROBE_ENABLED="true"                          # set false to no-op the SDK
 ```
 
-The SDK auto-initializes from the environment. You can also configure programmatically with
+The SDK auto-initializes from the environment. You can also configure programmatically via
 `pandaprobe.init()` — see https://docs.pandaprobe.com/tracing/configuration/project-configuration.
+If keys are missing, ask the user to set them in their shell or `.env`; don't ask them to
+paste a key into chat.
 
-## Three layers of instrumentation
+## Layer 1 — Agent framework integrations (recommended)
 
-Pick the lightest layer that fits. Verify all names against current docs.
+Hook into a framework to automatically trace the full agent lifecycle — LLM calls, tool
+invocations, sub-agent handoffs, guardrails — as a properly nested span tree. You don't
+create traces or spans yourself.
 
-### Layer 1 — LLM provider wrappers (zero-code)
+All integrations share the same constructor params: `session_id`, `user_id`, `tags`,
+`metadata` (all optional). They differ only in **how you wire them in**, via one of two
+patterns:
 
-Wrap the client once; every call is traced. Returns the same client type.
+- **Callback handler** (LangChain-family: LangGraph, LangChain, DeepAgents): construct a
+  handler and pass it per invocation via `config={"callbacks": [handler]}`.
+- **Adapter `.instrument()`** (OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK):
+  construct an adapter and call `adapter.instrument()` **once at startup**, before creating
+  agents/runners — then use the framework normally.
+
+| Framework        | Import (module · class)                                      | Wiring                |
+| ---------------- | ------------------------------------------------------------ | --------------------- |
+| LangGraph        | `pandaprobe.integrations.langgraph` · `LangGraphCallbackHandler`     | callback handler |
+| LangChain        | `pandaprobe.integrations.langchain` · `LangChainCallbackHandler`     | callback handler |
+| DeepAgents       | `pandaprobe.integrations.deepagents` · `DeepAgentsCallbackHandler`   | callback handler |
+| OpenAI Agents    | `pandaprobe.integrations.openai_agents` · `OpenAIAgentsAdapter`      | `.instrument()`  |
+| CrewAI           | `pandaprobe.integrations.crewai` · `CrewAIAdapter`                   | `.instrument()`  |
+| Google ADK       | `pandaprobe.integrations.google_adk` · `GoogleADKAdapter`            | `.instrument()`  |
+| Claude Agent SDK | `pandaprobe.integrations.claude_agent_sdk` · `ClaudeAgentSDKAdapter` | `.instrument()`  |
+
+**Callback-handler pattern (LangGraph):**
+
+```python
+# verify against current docs
+from pandaprobe.integrations.langgraph import LangGraphCallbackHandler
+
+handler = LangGraphCallbackHandler(session_id="conversation-123", user_id="user-abc")
+result = graph.invoke(
+    {"messages": [{"role": "user", "content": "Hello!"}]},
+    config={"callbacks": [handler]},   # pass on every invocation
+)
+```
+
+**Adapter pattern (OpenAI Agents — same shape for CrewAI, Google ADK, Claude Agent SDK):**
+
+```python
+# verify against current docs
+from pandaprobe.integrations.openai_agents import OpenAIAgentsAdapter
+
+OpenAIAgentsAdapter(session_id="conversation-123", user_id="user-abc").instrument()
+# ...then build and run agents as usual; runs are traced automatically.
+```
+
+Each framework's page documents exactly what gets traced and any framework-specific
+caveats — **read it before wiring**: https://docs.pandaprobe.com/tracing/integrations/overview
+
+## Layer 2 — LLM provider wrappers
+
+When there's no agent framework, wrap the provider client once. The wrapper returns the
+same client type, so existing call sites are unchanged, and every call is traced (input,
+output, model, token usage, params, TTFT for streaming).
 
 ```python
 # verify against current docs
@@ -76,41 +148,18 @@ client = wrap_openai(OpenAI())   # use exactly as before — all calls now trace
 Available wrappers: `wrap_openai`, `wrap_anthropic`, `wrap_gemini`, `wrap_mistral`,
 `wrap_bedrock` (beta). Details: https://docs.pandaprobe.com/tracing/wrappers/overview
 
-### Layer 2 — Agent framework integrations
+## Layer 3 — Manual instrumentation
 
-Hook into a framework to trace the full lifecycle (LLM calls, tools, sub-agent handoffs).
-All share constructor params `session_id`, `user_id`, `tags`, `metadata`, and produce
-properly nested spans automatically.
-
-| Framework        | Class                       |
-| ---------------- | --------------------------- |
-| LangGraph        | `LangGraphCallbackHandler`  |
-| LangChain        | `LangChainCallbackHandler`  |
-| DeepAgents       | `DeepAgentsCallbackHandler` |
-| Google ADK       | `GoogleADKAdapter`          |
-| Claude Agent SDK | `ClaudeAgentSDKAdapter`     |
-| CrewAI           | `CrewAIAdapter`             |
-| OpenAI Agents    | `OpenAIAgentsAdapter`       |
-
-```python
-# verify against current docs — wiring differs per framework
-from pandaprobe.integrations import LangGraphCallbackHandler
-
-handler = LangGraphCallbackHandler(session_id="s-1")
-graph.invoke({"messages": [...]}, config={"callbacks": [handler]})
-```
-
-Per-framework setup: https://docs.pandaprobe.com/tracing/integrations/overview
-
-### Layer 3 — Manual instrumentation (full control)
-
-Use decorators on functions, or context managers for fine-grained control.
+For custom runtimes or to add spans around your own logic. Use `@pandaprobe.trace` on a
+top-level entry point and `@pandaprobe.span` on inner steps; both auto-detect sync/async
+and capture inputs/outputs. `pandaprobe.start_trace()` / `t.span()` context managers cover
+cases decorators don't fit.
 
 ```python
 # verify against current docs
 import pandaprobe
 
-@pandaprobe.trace(name="support-agent")          # top-level entry point -> a trace
+@pandaprobe.trace(name="support-agent")               # entry point -> a trace
 def handle_request(query: str) -> str:
     docs = retrieve_docs(query)
     return generate_answer(query, docs)
@@ -118,32 +167,23 @@ def handle_request(query: str) -> str:
 @pandaprobe.span(name="retrieve", kind="RETRIEVER")   # inner step -> a span
 def retrieve_docs(query: str) -> list[str]:
     ...
-
-@pandaprobe.span(name="generate", kind="LLM", model="gpt-5.4")
-def generate_answer(query: str, docs: list[str]) -> str:
-    ...
 ```
 
-Both decorators auto-detect sync/async and capture inputs/outputs. `@pandaprobe.span`
-requires an active trace context. Context managers `pandaprobe.start_trace()` and
-`t.span()` cover cases decorators don't fit. Span kinds: `LLM`, `TOOL`, `AGENT`, `CHAIN`,
-`RETRIEVER`, `EMBEDDING`, `OTHER`. Details:
+`@pandaprobe.span` requires an active trace context. Span kinds: `LLM`, `TOOL`, `AGENT`,
+`CHAIN`, `RETRIEVER`, `EMBEDDING`, `OTHER`. Details:
 https://docs.pandaprobe.com/tracing/manual/decorators
-
-Layers compose: a wrapper call inside an `@pandaprobe.trace` (or integration) automatically
-nests as a child span with token usage and model metadata.
 
 ## Verify instrumentation worked
 
-1. Confirm the SDK is importable and check the version:
+1. Confirm the SDK imports and check the version:
    ```bash
    python -c "import pandaprobe; print(pandaprobe.__version__)"
    ```
-2. Enable debug logging to see traces being sent (no key printed):
+2. Run the app with debug logging to see traces being sent (key stays masked):
    ```bash
    PANDAPROBE_DEBUG=true python your_app.py
    ```
-3. Run the app, then confirm the trace landed using the CLI (see `cli.md`):
+3. Confirm the trace landed using the CLI (see [cli.md](cli.md)):
    ```bash
    pandaprobe traces list --limit 5
    pandaprobe traces get <trace_id>     # inspect spans, token usage, status
