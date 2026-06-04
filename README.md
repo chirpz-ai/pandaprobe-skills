@@ -20,7 +20,6 @@ topic is needed.
 ## Install
 
 Uses [`npx skills`](https://github.com/vercel-labs/skills), the open agent-skills CLI.
-GitHub is the registry, and [skills.sh](https://skills.sh) indexes installs automatically.
 
 ```bash
 # Project (current repo):
