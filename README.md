@@ -20,16 +20,23 @@ topic is needed.
 ## Install
 
 Uses [`npx skills`](https://github.com/vercel-labs/skills), the open agent-skills CLI.
+Pick the scope that fits:
 
 ```bash
-# Project (current repo):
-npx skills add chirpz-ai/pandaprobe-skills --yes
+# Local — install into the current project (all detected agents):
+npx skills add chirpz-ai/pandaprobe-skills --skill '*' --yes
 
-# Global (all projects), Claude Code:
-npx skills add chirpz-ai/pandaprobe-skills --agent claude-code --global --yes
+# Global — install for all your projects (all detected agents):
+npx skills add chirpz-ai/pandaprobe-skills --skill '*' --yes --global
+
+# Link to a specific agent (e.g. Claude Code), installed globally:
+npx skills add chirpz-ai/pandaprobe-skills --agent claude-code --skill '*' --yes --global
 ```
 
-Install from a local checkout (e.g. to test changes):
+`--skill '*'` selects every skill in the repo (this repo has one, `pandaprobe`); omit
+`--agent` to install to all detected agents, or pass `--agent <name>` to target one.
+
+Install from a local checkout (e.g. to test changes before pushing):
 
 ```bash
 npx skills add ./ --agent claude-code
