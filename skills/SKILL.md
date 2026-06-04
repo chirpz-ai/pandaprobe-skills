@@ -1,6 +1,6 @@
 ---
 name: pandaprobe
-description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) instrument and trace an AI agent or LLM app — adding observability to an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents) or an LLM provider (OpenAI, Anthropic, Gemini, Mistral, Bedrock); (2) inspect, debug, or evaluate traces, sessions, spans, scores, or evaluation runs via the pandaprobe CLI; (3) install, set up, or authenticate the pandaprobe CLI; or (4) look up PandaProbe documentation, concepts, or integration guides for SDK usage. Covers SDK instrumentation, CLI-based read/eval access, and documentation retrieval.
+description: Trace and evaluate AI agents with PandaProbe. Use when the user wants to (1) set up, onboard, or get started with PandaProbe in a project ("set up PandaProbe", "add PandaProbe", "get started with PandaProbe") — a guided flow that installs and authenticates the SDK and CLI, instruments the app, and verifies traces; (2) add tracing or observability to an AI agent or LLM app by instrumenting an agent framework (LangGraph, LangChain, OpenAI Agents, CrewAI, Google ADK, Claude Agent SDK, DeepAgents) or LLM provider (OpenAI, Anthropic, Gemini, Mistral, Bedrock) with the PandaProbe SDK; or (3) install, authenticate, and use the pandaprobe CLI to inspect, debug, or evaluate traces, sessions, spans, scores, and evaluation runs. Instrumentation is done doc-first against the live PandaProbe documentation.
 allowed-tools:
   - Bash(pandaprobe *)
   - Bash(curl -fsSL https://cli.pandaprobe.com/*)
@@ -13,24 +13,37 @@ allowed-tools:
 # PandaProbe
 
 PandaProbe is an agent engineering platform for tracing, evaluating, and monitoring AI
-agents and LLM apps. This skill supports two primary goals:
+agents and LLM apps. This skill supports three goals:
 
-1. **Instrument an agent application** with the PandaProbe SDK so its runs are traced
-   (§1) — work doc-first; see [references/instrumentation.md](references/instrumentation.md).
-2. **Read and evaluate data** — traces, sessions, spans, scores, eval runs — with the
-   `pandaprobe` CLI (§2); see [references/cli.md](references/cli.md).
+1. **Onboard a project** onto PandaProbe — a guided end-to-end setup (see the next section).
+2. **Instrument an application** with the PandaProbe SDK so its runs are traced (section 1);
+   see [references/instrumentation.md](references/instrumentation.md).
+3. **Read and evaluate data** — traces, sessions, spans, scores, eval runs — with the
+   `pandaprobe` CLI (section 2); see [references/cli.md](references/cli.md).
 
-§3 explains how to fetch the latest documentation, which §1 depends on.
+Section 3 is a supporting **method**, not a goal: how to fetch the latest documentation,
+which instrumentation always depends on (work doc-first, never from memory).
+
+## Set up PandaProbe (guided onboarding)
+
+When the user says "set up PandaProbe", "add PandaProbe to my project", "get started", or
+similar, run the end-to-end onboarding: detect the stack → install and authenticate the CLI
+→ install and configure the SDK → instrument the app (highest layer that fits, doc-first) →
+run it and verify a trace lands → point them to the dashboard. **Confirm with the user
+before installing packages, authenticating, or editing their code.**
+
+Follow the step-by-step playbook in [references/setup.md](references/setup.md); it sequences
+section 1 (instrument) and section 2 (CLI) and uses the docs from section 3.
 
 ## Core Principles
 
 Follow these for ALL PandaProbe work:
 
 1. **Documentation first.** NEVER instrument from memory. The SDK is under active
-   development — always fetch the latest docs before writing instrumentation code (§3).
+   development — always fetch the latest docs before writing instrumentation code (section 3).
 2. **CLI for data access.** Use the `pandaprobe` CLI to read or evaluate data — never
    hand-build API calls. It is agent-first: JSON on stdout, errors on stderr, meaningful
-   exit codes, no interactive prompts (§2).
+   exit codes, no interactive prompts (section 2).
 3. **Best practices by use case.** Read the relevant reference file before implementing —
    instrumentation → `references/instrumentation.md`; CLI → `references/cli.md`.
 4. **Use the latest versions.** Unless the user specifies otherwise, use the latest
@@ -51,10 +64,10 @@ Procedure:
    Gemini, Mistral, Bedrock) the app uses.
 2. **Choose the layer** (priority order): agent-framework integration → provider wrapper →
    manual decorators. Prefer the highest that fits; layers compose.
-3. **Fetch the latest docs** for that exact framework/provider (§3) and confirm the package
+3. **Fetch the latest docs** for that exact framework/provider (section 3) and confirm the package
    extra, import path, class name, and wiring pattern **before** writing code.
 4. **Install, set credentials, wire the chosen layer, then verify** the trace landed with
-   the CLI (§2).
+   the CLI (section 2).
 
 The high-level playbook — layers, install extras, the integration wiring patterns, credentials, and verification — lives in
 [references/instrumentation.md](references/instrumentation.md). Always reconcile exact names and signatures with the current docs.
