@@ -66,29 +66,43 @@ pandaprobe version
 pandaprobe auth login        # opens the browser; add --no-browser on headless/SSH
 ```
 
-**b. Reuse those credentials for the SDK — no manual copy needed.** Read the authenticated
-`api_key` and `project_name` from the CLI config and write them into a `.env` file in the
-project root. Use the redirect below so the key goes straight into `.env` and **never
-appears in your chat output**:
-
-```bash
-{
-  echo "PANDAPROBE_API_KEY=$(pandaprobe config get api_key)"
-  echo "PANDAPROBE_PROJECT_NAME=$(pandaprobe config get project_name)"
-} >> .env
-```
-
-(Self-hosted: set these first with `pandaprobe config set …`; the same read applies.)
-
-**c. Add the provider key.** The only credential the user must supply is their LLM provider
-key — prompt them to paste it into `.env`:
+**b. Reuse those credentials for the SDK — copy the RAW values.** After login, the CLI
+stores the **raw** `api_key` and `project_name` in `~/.pandaprobe/config.yaml` (find it with
+`pandaprobe config path`). Open that file, read the raw values, and write them into a `.env`
+file in the project root in exactly this format:
 
 ```dotenv
-OPENAI_API_KEY=<your chosen provider's key>
+PANDAPROBE_API_KEY=<raw value>
+PANDAPROBE_PROJECT_NAME=<raw value>
+```
+
+**Use the raw, unmasked key** exactly as stored in `config.yaml`. Do **not** use the masked
+form (e.g. `sk_pp_****43dc`) printed by `pandaprobe config show` or `pandaprobe config get` —
+a masked value will not authenticate. Read it from the config file, not from `config get`.
+
+**c. Add the provider key.** The only credential the user must supply is their LLM provider
+key. Ask which way they'd prefer to add it:
+
+- **a) Paste in chat — you add it.** The user pastes their provider API key in the chat and
+  you write it into `.env` yourself, using the correct variable name for the provider.
+- **b) The user adds it manually.** prompt them to put the credential in `.env` (the right
+  variable name for their provider) and wait for them to confirm it's set.
+
+Either way `.env` ends up with the provider key, e.g.:
+
+```dotenv
+OPENAI_API_KEY=<provider key>   # variable name depends on the provider
 # PANDAPROBE_DEBUG=true   # optional: log traces being sent
 ```
 
-**d. Install the SDK** with the extra for the chosen framework, plus `python-dotenv` to load
+**d. Ignore secrets in git.** Create or update `.gitignore` in the project root and add
+`.env` so the credentials are never committed:
+
+```gitignore
+.env
+```
+
+**e. Install the SDK** with the extra for the chosen framework, plus `python-dotenv` to load
 `.env` (and any provider/framework library the example imports; see the extras table in
 [instrumentation.md](instrumentation.md)):
 
