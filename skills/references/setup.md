@@ -12,7 +12,7 @@ example over theory.
 
 **If the user already has an application and wants to wire tracing into it, this is the
 wrong path** — do not use this file. Switch to [instrumentation.md](instrumentation.md)
-(SKILL.md section 1), which covers instrumenting an existing app.
+(SKILL.md section 2), which covers instrumenting an existing app.
 
 This is an orchestrator: it makes the choices interactive, implements the example **doc-first**
 (from [instrumentation.md](instrumentation.md) + the live docs), and verifies with the CLI
@@ -98,7 +98,7 @@ pip install "pandaprobe[<framework-extra>]" python-dotenv   # e.g. "pandaprobe[l
 
 ## Step 3 — Fetch docs & implement the example (doc-first)
 
-Fetch the latest relevant docs (SKILL.md section 3), then write a minimal, runnable agent
+Fetch the latest relevant docs (SKILL.md section 4), then write a minimal, runnable agent
 example from them — **not from memory**. Confirm the file with the user before creating it.
 
 - Fetch `tracing/integrations/overview` + the chosen framework's page (and
